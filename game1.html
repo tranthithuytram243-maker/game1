@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Pronunciation Checker</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: #f4f7f6; padding: 50px; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        h1 { color: #2c3e50; }
+        #targetText { font-size: 24px; font-weight: bold; color: #3498db; margin: 20px 0; }
+        button { padding: 12px 25px; font-size: 16px; cursor: pointer; border: none; border-radius: 5px; transition: 0.3s; }
+        .btn-start { background-color: #2ecc71; color: white; }
+        .btn-start:disabled { background-color: #bdc3c7; }
+        #result { margin-top: 25px; font-size: 18px; }
+        .score { font-size: 30px; font-weight: bold; margin-top: 10px; }
+        .match { color: #27ae60; }
+        .mismatch { color: #e74c3c; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Luyện Phát Âm Anh - Mỹ</h1>
+    <p>Hãy đọc câu dưới đây:</p>
+    <div id="targetText">I love learning English with Google AI</div>
+    
+    <button id="startBtn" class="btn-start">Nhấn để bắt đầu nói</button>
+    
+    <div id="result">
+        <p id="transcriptText">Kết quả: <i>Chưa có dữ liệu</i></p>
+        <div id="scoreDisplay" class="score"></div>
+    </div>
+</div>
+
+<script>
+    // Kiểm tra trình duyệt có hỗ trợ không
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+        alert("Trình duyệt của bạn không hỗ trợ nhận diện giọng nói. Hãy dùng Google Chrome.");
+    } else {
+        const recognition = new SpeechRecognition();
+        const startBtn = document.getElementById('startBtn');
+        const targetText = document.getElementById('targetText').innerText.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g,"");
+        const transcriptDisplay = document.getElementById('transcriptText');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+
+        // Cấu hình nhận diện chuẩn Anh - Mỹ
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        startBtn.onclick = () => {
+            recognition.start();
+            startBtn.innerText = "Đang lắng nghe...";
+            startBtn.disabled = true;
+        };
+
+        recognition.onresult = (event) => {
+            const resultText = event.results[0][0].transcript.toLowerCase();
+            const confidence = event.results[0][0].confidence;
+            
+            transcriptDisplay.innerHTML = `Bạn đã nói: <span class="match">"${resultText}"</span>`;
+            
+            // Tính toán điểm số đơn giản dựa trên độ tương đồng văn bản
+            calculateScore(targetText, resultText);
+        };
+
+        recognition.onspeechend = () => {
+            recognition.stop();
+            startBtn.innerText = "Nhấn để bắt đầu nói";
+            startBtn.disabled = false;
+        };
+
+        recognition.onerror = (event) => {
+            alert("Lỗi: " + event.error);
+            startBtn.disabled = false;
+            startBtn.innerText = "Thử lại";
+        };
+
+        function calculateScore(target, result) {
+            // Thuật toán so sánh đơn giản: Kiểm tra các từ khớp nhau
+            const targetWords = target.split(' ');
+            const resultWords = result.split(' ');
+            
+            let matchedCount = 0;
+            targetWords.forEach(word => {
+                if (resultWords.includes(word)) {
+                    matchedCount++;
+                }
+            });
+
+            const score = Math.round((matchedCount / targetWords.length) * 100);
+            
+            let color = "#e74c3c"; // Đỏ (kém)
+            if (score > 80) color = "#27ae60"; // Xanh (tốt)
+            else if (score > 50) color = "#f1c40f"; // Vàng (tạm)
+
+            scoreDisplay.innerHTML = `Điểm số: <span style="color:${color}">${score}%</span>`;
+        }
+    }
+</script>
+
+</body>
+</html>
